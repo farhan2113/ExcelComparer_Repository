@@ -46,8 +46,9 @@ class Home(MDScreen):
         
         if len(self.files_list) == 2:
             
-            path = Compare().compare(self.files_list[0], self.files_list[1])
+            
             try:
+                path = Compare().compare(self.files_list[0], self.files_list[1])
                 if platform.system() == "Windows":
                     os.startfile(path)
                 elif platform.system() == 'Darwin':
