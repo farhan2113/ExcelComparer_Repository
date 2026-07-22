@@ -13,7 +13,7 @@ class Compare:
       
         file_1_name = ''
         for char in reversed(file_1):
-            if char != '/':
+            if char not in '\/':
                 file_1_name = char + file_1_name
             else:
                 break
@@ -21,7 +21,7 @@ class Compare:
 
         file_2_name = ''
         for char in reversed(file_2):
-            if char != '/':
+            if char not in '\/':
                 file_2_name = char + file_2_name
             else:
                 break        
