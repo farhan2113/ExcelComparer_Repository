@@ -39,12 +39,12 @@ class Compare:
             else:
                 break        
 
-        if file_1_name[:-4] == '.xls':
+        if file_1_name[-4:] == '.xls':
             file_1_name = file_1_name[:-4]
         else:
             file_1_name = file_1_name[:-5]
 
-        if file_2_name[:-4] == '.xls':
+        if file_2_name[-4:] == '.xls':
             file_2_name = file_2_name[:-4]
         else:
             file_2_name = file_2_name[:-5]
