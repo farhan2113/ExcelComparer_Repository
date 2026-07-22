@@ -7,6 +7,19 @@ class Compare:
         read_file_1 = pd.read_excel(file_1)
         read_file_2 = pd.read_excel(file_2)
 
+        read_file_1 = read_file_1.sort_index(axis=1)
+        read_file_2 = read_file_2.sort_index(axis=1)
+
+        all_cols = read_file_1.columns.union(read_file_2.columns)
+
+        read_file_1 = read_file_1.reindex(columns= all_cols)
+        read_file_2 = read_file_2.reindex(columns= all_cols)
+
+        max_rows = max(len(read_file_1), len(read_file_2))
+
+        read_file_1 = read_file_1.reindex(range(max_rows))
+        read_file_2 = read_file_2.reindex(range(max_rows))
+
         
         result = read_file_1.compare(read_file_2)
 
