@@ -1,0 +1,32 @@
+import pandas as pd
+class Compare:
+    def __init__(self):
+        pass
+    def compare(self, file_1, file_2):
+        
+        read_file_1 = pd.read_excel(file_1)
+        read_file_2 = pd.read_excel(file_2)
+
+        
+        result = read_file_1.compare(read_file_2)
+
+      
+        file_1_name = ''
+        for char in reversed(file_1):
+            if char != '/':
+                file_1_name = char + file_1_name
+            else:
+                break
+        
+
+        file_2_name = ''
+        for char in reversed(file_2):
+            if char != '/':
+                file_2_name = char + file_2_name
+            else:
+                break        
+        file_1_name = file_1_name[:-5]
+        file_2_name = file_2_name[:-5]
+       
+        result.to_excel(file_1_name + '_' + file_2_name + '.xlsx')
+        return file_1_name + '_' + file_2_name + '.xlsx'
