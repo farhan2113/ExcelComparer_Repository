@@ -38,8 +38,17 @@ class Compare:
                 file_2_name = char + file_2_name
             else:
                 break        
-        file_1_name = file_1_name[:-5]
-        file_2_name = file_2_name[:-5]
+
+        if file_1_name[:-4] == '.xls':
+            file_1_name = file_1_name[:-4]
+        else:
+            file_1_name = file_1_name[:-5]
+
+        if file_2_name[:-4] == '.xls':
+            file_2_name = file_2_name[:-4]
+        else:
+            file_2_name = file_2_name[:-5]
+        
        
         result.to_excel(file_1_name + '_' + file_2_name + '.xlsx')
         return file_1_name + '_' + file_2_name + '.xlsx'
