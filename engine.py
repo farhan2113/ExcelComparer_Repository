@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 class Compare:
     def __init__(self):
         pass
@@ -23,32 +24,12 @@ class Compare:
         
         result = read_file_1.compare(read_file_2)
 
-      
-        file_1_name = ''
-        for char in reversed(file_1):
-            if char not in '\/':
-                file_1_name = char + file_1_name
-            else:
-                break
-        
+        base_name_1 = os.path.basename(file_1)
+        base_name_2 = os.path.basename(file_2)
 
-        file_2_name = ''
-        for char in reversed(file_2):
-            if char not in '\/':
-                file_2_name = char + file_2_name
-            else:
-                break        
-
-        if file_1_name[-4:] == '.xls':
-            file_1_name = file_1_name[:-4]
-        else:
-            file_1_name = file_1_name[:-5]
-
-        if file_2_name[-4:] == '.xls':
-            file_2_name = file_2_name[:-4]
-        else:
-            file_2_name = file_2_name[:-5]
+        file_1_name , extension_1 = os.path.splitext(base_name_1)
+        file_2_name , extension_2 = os.path.splitext(base_name_2)
         
        
-        result.to_excel(file_1_name + '_' + file_2_name + '.xlsx')
-        return file_1_name + '_' + file_2_name + '.xlsx'
+        result.to_excel(file_1_name + '_' + file_2_name + extension_1)
+        return file_1_name + '_' + file_2_name + extension_1

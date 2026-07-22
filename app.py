@@ -16,7 +16,7 @@ class Home(MDScreen):
     files_list = []
     def load_file(self, btn):
        
-        file_chooser = FileChooserIconView(filters=['*.xlsx', '*.xls'])
+        file_chooser = FileChooserIconView()
 
         Float = FloatLayout()
         Float.add_widget(file_chooser)
