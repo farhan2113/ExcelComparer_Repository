@@ -52,7 +52,7 @@ jobs:
     - name: Build Windows Executable
       if: matrix.target == 'windows'
       run: |
-        pyinstaller --noconfirm --onedir --windowed --name="ExcelComparer" --collect-data kivymd --collect-data kivy app.py
+        pyinstaller --noconfirm --onedir --windowed --noupx --name="ExcelComparer" --collect-data kivymd --collect-data kivy app.py
         powershell Compress-Archive -Path dist/ExcelComparer -DestinationPath ExcelComparer-Windows.zip -Force
       shell: bash
 
