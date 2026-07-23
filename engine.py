@@ -31,5 +31,5 @@ class Compare:
         file_2_name , extension_2 = os.path.splitext(base_name_2)
         
        
-        result.to_excel(file_1_name + '_' + file_2_name + extension_1)
-        return file_1_name + '_' + file_2_name + extension_1
+        result.to_excel(file_1_name + '_' + file_2_name + '.xlsx')
+        return file_1_name + '_' + file_2_name + '.xlsx'

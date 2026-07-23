@@ -67,6 +67,8 @@ class Home(MDScreen):
 
             self.ids.btn_2.disabled = False
             self.ids.btn_2.md_bg_color = 'orange'
+        else:
+            toast('please choose two files to compare them')
 
     pass
 
