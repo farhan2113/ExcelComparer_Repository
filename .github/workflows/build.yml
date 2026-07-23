@@ -33,14 +33,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller kivy kivymd pillow openpyxl pandas
 
-        # تثبيت مكتبات الاعتماد الخاصة بويندوز فقط
-        if [[ "$RUNNER_OS" == "Windows" ]]; then
-          pip install "kivy_deps.sdl2" "kivy_deps.glew" "kivy_deps.gstreamer" || true
-        fi
-
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-        # تثبيت الاعتماديات الخاصة بـ Linux (تم تصحيح اسم مكتبة OpenGL)
+        # تثبيت الاعتماديات الخاصة بـ Linux
         if [[ "$RUNNER_OS" == "Linux" ]]; then
           sudo apt-get update
           sudo apt-get install -y \
@@ -58,7 +53,7 @@ jobs:
       if: matrix.target == 'windows'
       run: |
         pyinstaller --noconfirm --onedir --windowed --name="ExcelComparer" --collect-data kivymd --collect-data kivy app.py
-        powershell Compress-Archive -Path dist/ExcelComparer -DestinationPath ExcelComparer-Windows.zip
+        powershell Compress-Archive -Path dist/ExcelComparer -DestinationPath ExcelComparer-Windows.zip -Force
       shell: bash
 
     - name: Upload Windows Build
@@ -91,25 +86,20 @@ jobs:
     - name: Build Linux .deb Package
       if: matrix.target == 'linux'
       run: |
-        # بناء الملف التنفيذي بباي إنسنتولر
         pyinstaller --noconfirm --onedir --name="ExcelComparer" --collect-data kivymd --collect-data kivy app.py
         
-        # إنشاء هيكل الحزمة القياسي لـ Debian
         mkdir -p deb_pkg/DEBIAN
         mkdir -p deb_pkg/usr/bin
         mkdir -p deb_pkg/usr/share/excel_comparer
         
-        # نقل مخرجات PyInstaller
         cp -r dist/ExcelComparer/* deb_pkg/usr/share/excel_comparer/
         
-        # إنشاء السكربت المساعد (تم تصحيح المسار إلى ExcelComparer)
         cat << 'EOF' > deb_pkg/usr/bin/excel_comparer
         #!/bin/sh
         exec /usr/share/excel_comparer/ExcelComparer "$@"
         EOF
         chmod +x deb_pkg/usr/bin/excel_comparer
 
-        # إنشاء ملف وصف الحزمة (control)
         cat << 'EOF' > deb_pkg/DEBIAN/control
         Package: excel-comparer
         Version: 1.0.0
@@ -118,7 +108,6 @@ jobs:
         Description: excel comparer app
         EOF
 
-        # تجميع ملف .deb
         dpkg-deb --build deb_pkg excel_comparer_1.0.0_amd64.deb
 
     - name: Upload Linux Build
