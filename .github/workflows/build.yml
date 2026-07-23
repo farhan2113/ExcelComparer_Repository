@@ -3,7 +3,7 @@ name: Build KivyMD App for Multi-Platform
 on:
   push:
     branches: [ "main", "master" ]
-  workflow_dispatch: # يتيح لك تشغيل البناء يدوياً من GitHub
+  workflow_dispatch:
 
 jobs:
   build:
@@ -32,18 +32,23 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pyinstaller kivy kivymd pillow openpyxl pandas
-        pip install "kivy_deps.sdl2" "kivy_deps.glew" "kivy_deps.gstreamer" || true
+
+        # تثبيت مكتبات الاعتماد الخاصة بويندوز فقط
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          pip install "kivy_deps.sdl2" "kivy_deps.glew" "kivy_deps.gstreamer" || true
+        fi
 
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+        # تثبيت الاعتماديات الخاصة بـ Linux (تم تصحيح اسم مكتبة OpenGL)
         if [[ "$RUNNER_OS" == "Linux" ]]; then
           sudo apt-get update
           sudo apt-get install -y \
-            libmtdev1 libgl1-mesa-glx libglib2.0-0 \
+            libmtdev1 libgl1 libglib2.0-0 \
             libsdl2-2.0-0 libsdl2-image-2.0-0 libsdl2-mixer-2.0-0 libsdl2-ttf-2.0-0 \
             libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 \
             xvfb libegl1-mesa
         fi
-
       shell: bash
 
     # -------------------------------------------------------------
@@ -97,16 +102,16 @@ jobs:
         # نقل مخرجات PyInstaller
         cp -r dist/ExcelComparer/* deb_pkg/usr/share/excel_comparer/
         
-        # إنشاء السكربت المساعد لتشغيل البرنامج
+        # إنشاء السكربت المساعد (تم تصحيح المسار إلى ExcelComparer)
         cat << 'EOF' > deb_pkg/usr/bin/excel_comparer
         #!/bin/sh
-        exec /usr/share/excel_comparer/excel_comparer "$@"
+        exec /usr/share/excel_comparer/ExcelComparer "$@"
         EOF
         chmod +x deb_pkg/usr/bin/excel_comparer
 
         # إنشاء ملف وصف الحزمة (control)
         cat << 'EOF' > deb_pkg/DEBIAN/control
-        Package: excel_comparer
+        Package: excel-comparer
         Version: 1.0.0
         Architecture: amd64
         Maintainer: Mohamed <mohamedfarhan2113@gmail.com>
