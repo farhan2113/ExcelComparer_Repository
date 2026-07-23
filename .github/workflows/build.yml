@@ -35,6 +35,11 @@ jobs:
 
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
+        # تثبيت مكتبات الرسوميات الخاصة بـ Windows بدون OpenGL حقيقي
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          pip install "kivy_deps.sdl2" "kivy_deps.angle" || true
+        fi
+
         # تثبيت الاعتماديات الخاصة بـ Linux
         if [[ "$RUNNER_OS" == "Linux" ]]; then
           sudo apt-get update
@@ -47,10 +52,15 @@ jobs:
       shell: bash
 
     # -------------------------------------------------------------
-    # 1️⃣ بناء نسخة Windows (.exe)
+    # 1️⃣ بناء نسخة Windows (.exe) - مع حل مشكلة OpenGL
     # -------------------------------------------------------------
     - name: Build Windows Executable
       if: matrix.target == 'windows'
+      env:
+        KIVY_GL_BACKEND: angle_sdl2
+        KIVY_NO_ARGS: '1'
+        KIVY_NO_CONSOLELOG: '1'
+        KIVY_NO_FILELOG: '1'
       run: |
         pyinstaller --noconfirm --onedir --windowed --noupx --name="ExcelComparer" --collect-data kivymd --collect-data kivy app.py
         powershell Compress-Archive -Path dist/ExcelComparer -DestinationPath ExcelComparer-Windows.zip -Force
