@@ -1,0 +1,113 @@
+name: Build KivyMD App for Multi-Platform
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # يتيح لك تشغيل البناء يدوياً من GitHub
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            target: windows
+          - os: macos-latest
+            target: macos
+          - os: ubuntu-latest
+            target: linux
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller kivy kivymd pillow openpyxl pandas
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      shell: bash
+
+    # -------------------------------------------------------------
+    # 1️⃣ بناء نسخة Windows (.exe)
+    # -------------------------------------------------------------
+    - name: Build Windows Executable
+      if: matrix.target == 'windows'
+      run: |
+        pyinstaller --noconfirm --onedir --windowed --name="ExcelComparer" --collect-data kivymd --collect-data kivy app.py
+        powershell Compress-Archive -Path dist/ExcelComparer -DestinationPath ExcelComparer-Windows.zip
+      shell: bash
+
+    - name: Upload Windows Build
+      if: matrix.target == 'windows'
+      uses: actions/upload-artifact@v4
+      with:
+        name: Windows-EXE
+        path: ExcelComparer-Windows.zip
+
+    # -------------------------------------------------------------
+    # 2️⃣ بناء نسخة macOS (.app)
+    # -------------------------------------------------------------
+    - name: Build macOS App
+      if: matrix.target == 'macos'
+      run: |
+        pyinstaller --noconfirm --windowed --name="ExcelComparer" --collect-data kivymd --collect-data kivy app.py
+        cd dist
+        zip -r ExcelComparer-macOS.zip ExcelComparer.app
+
+    - name: Upload macOS Build
+      if: matrix.target == 'macos'
+      uses: actions/upload-artifact@v4
+      with:
+        name: macOS-APP
+        path: dist/ExcelComparer-macOS.zip
+
+    # -------------------------------------------------------------
+    # 3️⃣ بناء حزمة Linux (.deb)
+    # -------------------------------------------------------------
+    - name: Build Linux .deb Package
+      if: matrix.target == 'linux'
+      run: |
+        # بناء الملف التنفيذي بباي إنسنتولر
+        pyinstaller --noconfirm --onedir --name="ExcelComparer" --collect-data kivymd --collect-data kivy app.py
+        
+        # إنشاء هيكل الحزمة القياسي لـ Debian
+        mkdir -p deb_pkg/DEBIAN
+        mkdir -p deb_pkg/usr/bin
+        mkdir -p deb_pkg/usr/share/excel_comparer
+        
+        # نقل مخرجات PyInstaller
+        cp -r dist/ExcelComparer/* deb_pkg/usr/share/excel_comparer/
+        
+        # إنشاء السكربت المساعد لتشغيل البرنامج
+        cat << 'EOF' > deb_pkg/usr/bin/excel_comparer
+        #!/bin/sh
+        exec /usr/share/excel_comparer/excel_comparer "$@"
+        EOF
+        chmod +x deb_pkg/usr/bin/excel_comparer
+
+        # إنشاء ملف وصف الحزمة (control)
+        cat << 'EOF' > deb_pkg/DEBIAN/control
+        Package: excel_comparer
+        Version: 1.0.0
+        Architecture: amd64
+        Maintainer: Mohamed <mohamedfarhan2113@gmail.com>
+        Description: excel comparer app
+        EOF
+
+        # تجميع ملف .deb
+        dpkg-deb --build deb_pkg excel_comparer_1.0.0_amd64.deb
+
+    - name: Upload Linux Build
+      if: matrix.target == 'linux'
+      uses: actions/upload-artifact@v4
+      with:
+        name: Linux-DEB
+        path: excel_comparer_1.0.0_amd64.deb
