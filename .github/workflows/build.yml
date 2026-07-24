@@ -14,7 +14,7 @@ jobs:
             target: windows
           - os: macos-latest
             target: macos
-          - os: ubuntu-22.04
+          - os: ubuntu-latest
             target: linux
 
     runs-on: ${{ matrix.os }}
@@ -35,11 +35,6 @@ jobs:
 
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-        # تثبيت مكتبات الرسوميات الخاصة بـ Windows بدون OpenGL حقيقي
-        if [[ "$RUNNER_OS" == "Windows" ]]; then
-          pip install "kivy_deps.sdl2" "kivy_deps.angle" || true
-        fi
-
         # تثبيت الاعتماديات الخاصة بـ Linux
         if [[ "$RUNNER_OS" == "Linux" ]]; then
           sudo apt-get update
@@ -52,17 +47,19 @@ jobs:
       shell: bash
 
     # -------------------------------------------------------------
-    # 1️⃣ بناء نسخة Windows (.exe) - مع حل مشكلة OpenGL
+    # 1️⃣ بناء نسخة Windows (.exe)
     # -------------------------------------------------------------
     - name: Build Windows Executable
       if: matrix.target == 'windows'
-      env:
-        KIVY_GL_BACKEND: angle_sdl2
-        KIVY_NO_ARGS: '1'
-        KIVY_NO_CONSOLELOG: '1'
-        KIVY_NO_FILELOG: '1'
       run: |
-        pyinstaller --noconfirm --onedir --windowed --noupx --name="ExcelComparer" --collect-data kivymd --collect-data kivy app.py
+        mkdir -p assets
+        pyinstaller --noconfirm --onedir --windowed --noupx \
+          --icon="assets/ExcelComparerIcon.ico" \
+          --name="ExcelComparer" \
+          --collect-data kivymd --collect-data kivy \
+          --add-data "kv_file.kv;." \
+          --add-data "assets;assets" \
+          app.py
         powershell Compress-Archive -Path dist/ExcelComparer -DestinationPath ExcelComparer-Windows.zip -Force
       shell: bash
 
@@ -79,7 +76,14 @@ jobs:
     - name: Build macOS App
       if: matrix.target == 'macos'
       run: |
-        pyinstaller --noconfirm --windowed --name="ExcelComparer" --collect-data kivymd --collect-data kivy app.py
+        mkdir -p assets
+        pyinstaller --noconfirm --windowed \
+          --icon="assets/ExcelComparerIcon.icns" \
+          --name="ExcelComparer" \
+          --collect-data kivymd --collect-data kivy \
+          --add-data "kv_file.kv:." \
+          --add-data "assets:assets" \
+          app.py
         cd dist
         zip -r ExcelComparer-macOS.zip ExcelComparer.app
 
@@ -96,20 +100,51 @@ jobs:
     - name: Build Linux .deb Package
       if: matrix.target == 'linux'
       run: |
-        pyinstaller --noconfirm --onedir --name="ExcelComparer" --collect-data kivymd --collect-data kivy app.py
+        mkdir -p assets
         
+        # 1. بناء الملف التنفيذي
+        pyinstaller --noconfirm --onedir \
+          --name="ExcelComparer" \
+          --collect-data kivymd --collect-data kivy \
+          --add-data "kv_file.kv:." \
+          --add-data "assets:assets" \
+          app.py
+        
+        # 2. إنشاء هيكل الحزمة القياسي لـ Debian
         mkdir -p deb_pkg/DEBIAN
         mkdir -p deb_pkg/usr/bin
         mkdir -p deb_pkg/usr/share/excel_comparer
+        mkdir -p deb_pkg/usr/share/pixmaps
+        mkdir -p deb_pkg/usr/share/applications
         
+        # 3. نقل مخرجات PyInstaller
         cp -r dist/ExcelComparer/* deb_pkg/usr/share/excel_comparer/
         
+        # 4. نقل الشعار لقائمة البرامج (إن وجد داخل assets/ExcelComparerIcon.png)
+        if [ -f assets/ExcelComparerIcon.png ]; then
+          cp assets/ExcelComparerIcon.png deb_pkg/usr/share/pixmaps/excel_comparer.png
+        fi
+
+        # 5. إنشاء السكربت المساعد (مع الدخول لمجلد البرنامج تلقائياً)
         cat << 'EOF' > deb_pkg/usr/bin/excel_comparer
         #!/bin/sh
-        exec /usr/share/excel_comparer/ExcelComparer "$@"
+        cd /usr/share/excel_comparer
+        exec ./ExcelComparer "$@"
         EOF
         chmod +x deb_pkg/usr/bin/excel_comparer
 
+        # 6. إنشاء اختصار القائمة (.desktop)
+        cat << 'EOF' > deb_pkg/usr/share/applications/excel_comparer.desktop
+        [Desktop Entry]
+        Name=Excel Comparer
+        Exec=excel_comparer
+        Icon=excel_comparer
+        Type=Application
+        Categories=Office;
+        Terminal=false
+        EOF
+
+        # 7. إنشاء ملف وصف الحزمة (control)
         cat << 'EOF' > deb_pkg/DEBIAN/control
         Package: excel-comparer
         Version: 1.0.0
@@ -118,6 +153,7 @@ jobs:
         Description: excel comparer app
         EOF
 
+        # 8. تجميع ملف .deb
         dpkg-deb --build deb_pkg excel_comparer_1.0.0_amd64.deb
 
     - name: Upload Linux Build

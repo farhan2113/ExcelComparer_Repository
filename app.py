@@ -12,6 +12,13 @@ from kivymd.toast import toast
 import os
 import platform
 import subprocess
+import sys
+
+def find_path(path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, path)
+    else:
+        return os.path.join(os.path.abspath('.'), path)
 class Home(MDScreen):
     files_list = []
     def load_file(self, btn):
@@ -27,7 +34,7 @@ class Home(MDScreen):
                 path_of_file = file_chooser.selection[0]
                 
                 btn.text = 'file choosen'
-                btn.md_bg_color = 'green'
+                
                 btn.disabled = True
 
                 self.files_list.append(path_of_file)
@@ -72,13 +79,14 @@ class Home(MDScreen):
 
     pass
 
-class FileComparer(MDApp):
+class ExcelComparer(MDApp):
     def build(self):
-        Builder.load_file('kv_file.kv')
+        self.icon = find_path('assets/ExcelComparerIcon.png')
+        Builder.load_file(find_path('kv_file.kv'))
        
         sm = ScreenManager()
         sm.add_widget(Home(name='home'))
         return sm
 
 if __name__ == "__main__":
-    FileComparer().run()
+    ExcelComparer().run()
