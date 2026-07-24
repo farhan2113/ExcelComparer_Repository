@@ -69,10 +69,12 @@ class Home(MDScreen):
 
             self.files_list.pop()
             self.ids.btn_1.disabled = False
+            self.ids.btn_1.text = 'load first excel file'
             self.ids.btn_1.md_bg_color = 'orange'
 
 
             self.ids.btn_2.disabled = False
+            self.ids.btn_2.text = 'load second excel file'
             self.ids.btn_2.md_bg_color = 'orange'
         else:
             toast('please choose two files to compare them')
